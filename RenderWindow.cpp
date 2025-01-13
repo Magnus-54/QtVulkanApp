@@ -10,17 +10,21 @@
 static float vertexData[] = {
     // Y up, front = CCW
     // X,     Y,     Z,     R,    G,    B
-    0.0f,   0.5f,   0.0f,   1.0f, 1.0f, 1.0f,    //top right vertex - blue
-    -0.5f,   -0.5f,   0.0f,   1.0f, 1.0f, .0f,    //top right vertex - blue
-    0.5f,  -0.5f,   0.0f,   1.0f, .0f, .0f,     //bottom right vertex - blue
+    0.0f,   0.5f,   0.5f,   1.0f, 1.0f, 1.0f,    //top right vertex - blue
+    -0.5f,   -0.5f,   -0.5f,   1.0f, 1.0f, .0f,    //top right vertex - blue
+    0.5f,  -0.5f,   -0.5f,   1.0f, .0f, .0f,     //bottom right vertex - blue
 
-    0.0f,   0.5f,   0.0f,   1.0f, 1.0f, 1.0f,    //top right vertex - blue
-    -0.5f,   -0.5f,   0.0f,   1.0f, 1.0f, .0f,    //top right vertex - blue
-    0.5f,  0.5f,   0.0f,   1.0f, .0f, .0f,     //bottom right vertex - blue
+    0.0f,   0.5f,   0.5f,   1.0f, 1.0f, 1.0f,    //top right vertex - blue
+    -0.5f,   -0.5f,   1.5f,   1.0f, 1.0f, .0f,    //top right vertex - blue
+    0.5f,  -0.5f,   1.5f,   1.0f, .0f, .0f,     //bottom right vertex - blue
 
+    0.0f,   0.5f,   0.5f,   1.0f, 1.0f, 1.0f,    //top right vertex - blue
+    0.5f,  -0.5f,   1.5f,   1.0f, 1.0f, .0f,    //top right vertex - blue
+    0.5f,  -0.5f,   -0.5f,   1.0f, .0f, .0f,     //bottom right vertex - blue
 
-
-
+    0.0f,   0.5f,   0.5f,   1.0f, 1.0f, 1.0f,    //top right vertex - blue
+    -0.5f,   -0.5f,   1.5f,   1.0f, 1.0f, .0f,    //top right vertex - blue
+    -0.5f,   -0.5f,   -0.5f,   1.0f, .0f, .0f,     //bottom right vertex - blue
 };
 
 //Utility variable and function for alignment:
@@ -436,7 +440,7 @@ void RenderWindow::startNextFrame()
 
     /********************************* Our draw call!: *********************************/
     // the number 3 is the number of vertices, so you have to change that if you add more!
-    mDeviceFunctions->vkCmdDraw(cb, 6, 1, 0, 0);
+    mDeviceFunctions->vkCmdDraw(cb, 12, 1, 0, 0);
 
     mDeviceFunctions->vkCmdEndRenderPass(cmdBuf);
 
