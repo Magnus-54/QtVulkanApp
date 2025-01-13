@@ -26,6 +26,9 @@ MainWindow::MainWindow(VulkanWindow *vw, QPlainTextEdit *logWidget)
     QPushButton *quitButton = new QPushButton(tr("&Quit"));
     quitButton->setFocusPolicy(Qt::NoFocus);
 
+    QPushButton *skibidiButton = new QPushButton(tr("&Skibidi"));
+    skibidiButton->setFocusPolicy(Qt::NoFocus);
+
     //connect push of grab button to screen grab function
     connect(grabButton, &QPushButton::clicked, this, &MainWindow::onScreenGrabRequested);
     //connect quit button to quit-function
@@ -43,6 +46,7 @@ MainWindow::MainWindow(VulkanWindow *vw, QPlainTextEdit *logWidget)
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     buttonLayout->addWidget(grabButton, 1);
     buttonLayout->addWidget(quitButton, 1);
+    buttonLayout->addWidget(skibidiButton, 1);
     layout->addLayout(buttonLayout);
 
     setLayout(layout);

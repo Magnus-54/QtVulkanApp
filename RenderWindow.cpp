@@ -10,9 +10,17 @@
 static float vertexData[] = {
     // Y up, front = CCW
     // X,     Y,     Z,     R,    G,    B
-    0.0f,   0.5f,  0.0f,   1.0f, 0.0f, 0.0f,    //top vertex - red
-    -0.5f,  -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,    //bottom left vertex - green
-    0.5f,  -0.5f,  0.0f,   0.0f, 0.0f, 1.0f     //bottom right vertex - blue
+    0.0f,   0.5f,   0.0f,   1.0f, 1.0f, 1.0f,    //top right vertex - blue
+    -0.5f,   -0.5f,   0.0f,   1.0f, 1.0f, .0f,    //top right vertex - blue
+    0.5f,  -0.5f,   0.0f,   1.0f, .0f, .0f,     //bottom right vertex - blue
+
+    0.0f,   0.5f,   0.0f,   1.0f, 1.0f, 1.0f,    //top right vertex - blue
+    -0.5f,   -0.5f,   0.0f,   1.0f, 1.0f, .0f,    //top right vertex - blue
+    0.5f,  0.5f,   0.0f,   1.0f, .0f, .0f,     //bottom right vertex - blue
+
+
+
+
 };
 
 //Utility variable and function for alignment:
@@ -348,7 +356,7 @@ void RenderWindow::initSwapChainResources()
     mProj.perspective(25.0f,          sz.width() / (float) sz.height(), 0.01f, 100.0f);
     //Camera is -4 away from origo
     /**PLAY WITH THIS**/
-    mProj.translate(0, 0, -4);
+    mProj.translate(0, 0, -6);
 
     //Flip projection because of Vulkan's -Y axis
     mProj.scale(1.0f, -1.0f, 1.0);
@@ -401,7 +409,7 @@ void RenderWindow::startNextFrame()
 
     //rotate the triangle 1 degree per frame
     /**PLAY WITH THIS**/
-    mRotation += 1.0f;
+    mRotation += 0.5f;
 
     mDeviceFunctions->vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline);
     mDeviceFunctions->vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1,
@@ -428,7 +436,7 @@ void RenderWindow::startNextFrame()
 
     /********************************* Our draw call!: *********************************/
     // the number 3 is the number of vertices, so you have to change that if you add more!
-    mDeviceFunctions->vkCmdDraw(cb, 3, 1, 0, 0);
+    mDeviceFunctions->vkCmdDraw(cb, 6, 1, 0, 0);
 
     mDeviceFunctions->vkCmdEndRenderPass(cmdBuf);
 
