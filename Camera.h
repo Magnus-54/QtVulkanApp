@@ -31,6 +31,9 @@ public:
     inline void setViewMatrix(const QMatrix4x4 &newViewMatrix){ mViewMatrix = newViewMatrix; }
     inline void setProjectionMatrix(const QMatrix4x4 &newProjectionMatrix){ mProjectionMatrix = newProjectionMatrix; }
 
+    inline float getYaw(){return mYaw;}
+    inline float getPitch(){return mPitch;}
+
 private:
     QVector3D mEye{0.0, 0.0, 0.0};  // Camera position
     QVector3D mAt{0.0, 0.0, -1.0};   // Forward vector
