@@ -25,8 +25,8 @@ void VulkanWindow::setCameraSpeed(float value)
     //Keep within some min and max values
     if(mCameraSpeed < 0.01f)
         mCameraSpeed = 0.01f;
-    if (mCameraSpeed > 0.3f)
-        mCameraSpeed = 0.3f;
+    if (mCameraSpeed > 2.f)
+        mCameraSpeed = 2.f;
 }
 
 void VulkanWindow::keyPressEvent(QKeyEvent *event)
