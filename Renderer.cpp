@@ -187,6 +187,24 @@ void Renderer::initResources()
 
     VkPipelineShaderStageCreateInfo shaderStagesC[] = { vertShaderCreateInfoC, fragShaderCreateInfoC };
 
+    // *************** PhongMaterial ******************
+    VkShaderModule mPhongVertShader = createShader(QStringLiteral(":/phong_vert.spv"));
+    VkShaderModule mPhongFragShader = createShader(QStringLiteral(":/phong_frag.spv"));
+
+    VkPipelineShaderStageCreateInfo phongVertStage{};
+    phongVertStage.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    phongVertStage.stage  = VK_SHADER_STAGE_VERTEX_BIT;
+    phongVertStage.module = mPhongVertShader;
+    phongVertStage.pName  = "main";
+
+    VkPipelineShaderStageCreateInfo phongFragStage{};
+    phongFragStage.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    phongFragStage.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
+    phongFragStage.module = mPhongFragShader;
+    phongFragStage.pName  = "main";
+
+    VkPipelineShaderStageCreateInfo phongStages[] = { phongVertStage, phongFragStage };
+
 	/*********************** Graphics pipeline ********************************/
     VkGraphicsPipelineCreateInfo pipelineInfo{};    //Will use this variable a lot in the next 100s of lines
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -273,6 +291,21 @@ void Renderer::initResources()
     if (result != VK_SUCCESS)
         qFatal("Failed to create graphics pipeline: %d", result);
 
+    // *************** Create Phong pipeline ******************
+    pipelineInfo.pStages = phongStages;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    rasterization.polygonMode = VK_POLYGON_MODE_FILL;
+
+    result = mDeviceFunctions->vkCreateGraphicsPipelines(
+        logicalDevice,
+        mPipelineCache,
+        1,
+        &pipelineInfo,
+        nullptr,
+        &mPhongPipeline
+        );
+    if (result != VK_SUCCESS)
+        qFatal("Failed to create Phong pipeline: %d", result);
 
 	// Destroying the shader modules, we won't need them anymore after the pipeline is created
     if (vertShaderModule)
@@ -283,6 +316,10 @@ void Renderer::initResources()
         mDeviceFunctions->vkDestroyShaderModule(logicalDevice, mColorMaterial.vertShaderModule, nullptr);
     if (mColorMaterial.fragShaderModule)
         mDeviceFunctions->vkDestroyShaderModule(logicalDevice, mColorMaterial.fragShaderModule, nullptr);
+    if (mPhongVertShader)
+        mDeviceFunctions->vkDestroyShaderModule(logicalDevice, mPhongVertShader, nullptr);
+    if (mPhongFragShader)
+        mDeviceFunctions->vkDestroyShaderModule(logicalDevice, mPhongFragShader, nullptr);
 
 	// Create the uniform buffer
 	createUniformBuffer();
@@ -335,10 +372,7 @@ void Renderer::startNextFrame()
     for (std::vector<VisualObject*>::iterator it=mObjects.begin(); it!=mObjects.end(); it++)
     {
         //Draw type
-		if ((*it)->getDrawType() == 0)
-			mDeviceFunctions->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline1);
-		else
-			mDeviceFunctions->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mColorMaterial.pipeline);
+        mDeviceFunctions->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPhongPipeline);
 
         QMatrix4x4 mvp = mCamera.projectionMatrix() * mCamera.viewMatrix() * (*it)->getMatrix();
         setModelMatrix((*it)->getMatrix()); //mvp);
@@ -796,6 +830,11 @@ void Renderer::releaseResources()
     if (mPipelineCache) {
         mDeviceFunctions->vkDestroyPipelineCache(dev, mPipelineCache, nullptr);
         mPipelineCache = VK_NULL_HANDLE;
+    }
+
+    if (mPhongPipeline) {
+        mDeviceFunctions->vkDestroyPipeline(dev, mPhongPipeline, nullptr);
+        mPhongPipeline = VK_NULL_HANDLE;
     }
 
 	destroyBuffer(mUniformBuffer);

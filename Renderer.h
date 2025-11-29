@@ -121,6 +121,11 @@ private:
 		//VkPipelineLayout pipelineLayout{ VK_NULL_HANDLE };    //also should have had a spesific pipeline layout
         VkPipeline pipeline{ VK_NULL_HANDLE };
     } mColorMaterial;
+
+    // phong shader
+    VkPipeline mPhongPipeline = VK_NULL_HANDLE;
+    VkShaderModule mPhongVertShader = VK_NULL_HANDLE;
+    VkShaderModule mPhongFragShader = VK_NULL_HANDLE;
 };
 
 #endif // RENDERER_H
