@@ -70,6 +70,11 @@ void Camera::moveRight(float delta)
     mPosition.setX( mPosition.x() + delta);
 }
 
+QVector3D Camera::position() const
+{
+    return mPosition;
+}
+
 void Camera::updateHeigth(float deltaHeigth)
 {
     mPosition.setY(mPosition.y() + deltaHeigth);

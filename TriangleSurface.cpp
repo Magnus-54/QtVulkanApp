@@ -30,17 +30,24 @@ TriangleSurface::TriangleSurface() : VisualObject()
 TriangleSurface::TriangleSurface(const std::string &filename)
 {
     std::ifstream inn(filename);
-    if (!inn.is_open())
-        return;
-    // read input from math part of compulsory
-    int n;
-    Vertex v;
-    inn >> n;
-    for (auto i=0; i<n; i++)
+    if (!inn.is_open()) return;
+
+    mVertices.clear();
+    mIndices.clear();
+
+    double x, y, z;
+    while (inn >> x >> y >> z)
     {
-        inn >> v;
+        Vertex v;
+        v.x = float(x);
+        v.y = float(z);   //  y = height
+        v.z = float(y);
+
+        v.r = v.g = v.b = 0.6f;  //  color
+        v.u = v.v = 0.f;
+
         mVertices.push_back(v);
-        //qDebug() << v.x << v.y << v.z;
     }
     inn.close();
+    return;
 }

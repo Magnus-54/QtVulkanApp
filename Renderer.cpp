@@ -27,18 +27,18 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
     }
 
     //mObjects.push_back(new Triangle());
-    //mObjects.push_back((new TriangleSurface()));
-    mObjects.push_back((new WorldAxis()));
+    mObjects.push_back((new TriangleSurface(assetPath + "lasdata.txt")));
+    //mObjects.push_back((new WorldAxis()));
     //mObjects.push_back(new HeightMap());
-    mObjects.push_back(new ObjMesh(assetPath + "lasdata.obj"));
-    mObjects.at(1)->rotate(-90, 1, 0, 0);
-    mObjects.at(1)->rotate(180, 0, 0, 1);
+    //mObjects.push_back(new ObjMesh(assetPath + "lasdata.obj"));
+    //mObjects.at(0)->rotate(-90, 1, 0, 0);
+    //mObjects.at(0)->rotate(180, 0, 0, 1);
     // Dag 030225
     //mObjects.at(0)->setName("tri");
     //mObjects.at(1)->setName("quad");
-    mObjects.at(0)->setName("axis");
+    //mObjects.at(0)->setName("axis");
     //mObjects.at(3)->setName("terrain");
-    mObjects.at(1)->setName("suzanne");
+    mObjects.at(0)->setName("suzanne");
     //static_cast<HeightMap*>(mObjects.at(3))->makeTerrain(assetPath + "Heightmap.jpg");
 
 
@@ -49,9 +49,9 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
         mMap.insert(std::pair<std::string, VisualObject*>{(*it)->getName(),*it});
 
 	//Inital position of the camera
-    mCamera.setPosition(QVector3D(-0.5, -100, 50));
-    mCamera.pitch(5.0f);
-    mCamera.yaw(-88);
+    mCamera.setPosition(QVector3D(130, -300, -460));
+    mCamera.pitch(-340.0f);
+    mCamera.yaw(25);
     //Need access to our VulkanWindow so making a convenience pointer
     mVulkanWindow = dynamic_cast<VulkanWindow*>(w);
 }
@@ -316,6 +316,8 @@ void Renderer::startNextFrame()
     mCamera.update();               //input can have moved the camera
     //qDebug() << std::to_string(mCamera.getYaw());
     //qDebug() << std::to_string(mCamera.getPitch());
+    //qDebug() << mCamera.position();
+
     VkCommandBuffer commandBuffer = mWindow->currentCommandBuffer();
 
 	setRenderPassParameters(commandBuffer);
@@ -357,7 +359,7 @@ void Renderer::startNextFrame()
     mDeviceFunctions->vkCmdEndRenderPass(commandBuffer);
 
     //Hardcoded!!!
-    mObjects.at(1)->rotate(0.0f, 0.0f, 0.0f, 1.0f);
+    mObjects.at(0)->rotate(0.0f, 0.0f, 0.0f, 1.0f);
     
     mWindow->frameReady();
     mWindow->requestUpdate(); // render continuously, throttled by the presentation rate
