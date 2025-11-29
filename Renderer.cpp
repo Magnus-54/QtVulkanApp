@@ -27,7 +27,9 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
     }
 
     //mObjects.push_back(new Triangle());
-    mObjects.push_back((new TriangleSurface(assetPath + "lasdata.txt")));
+    TriangleSurface* terrain = new TriangleSurface(assetPath + "lasdata.txt");
+    mObjects.push_back(terrain);
+    terrain->triangulate();
     //mObjects.push_back((new WorldAxis()));
     //mObjects.push_back(new HeightMap());
     //mObjects.push_back(new ObjMesh(assetPath + "lasdata.obj"));
@@ -203,8 +205,8 @@ void Renderer::initResources()
 	// **** Input Assembly **** - describes how primitives are assembled in the Graphics pipeline
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    //inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;       //Draw triangles
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;       //Draw points
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;       //Draw triangles
+    //inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;       //Draw points
 	inputAssembly.primitiveRestartEnable = VK_FALSE;                    //Allow strips to be connected, not used in TriangleList
     pipelineInfo.pInputAssemblyState = &inputAssembly;
 
@@ -261,7 +263,7 @@ void Renderer::initResources()
 
 	//Making a pipeline for drawing lines
 	mColorMaterial.pipeline = mPipeline1;                       // reusing most of the settings from the first pipeline
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;   // draw POINTS
+    //inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;   // draw POINTS
     //inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;   // draw lines
     rasterization.polygonMode = VK_POLYGON_MODE_FILL;           // VK_POLYGON_MODE_LINE will make a wireframe; VK_POLYGON_MODE_FILL
     rasterization.lineWidth = 5.0f;

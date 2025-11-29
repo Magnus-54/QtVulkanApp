@@ -10,6 +10,8 @@ class TriangleSurface : public VisualObject
 public:
     TriangleSurface();
     TriangleSurface(const std::string& filename);
+    void triangulate();
+    void computeNormals();
 };
 
 #endif // TRIANGLESURFACE_H
