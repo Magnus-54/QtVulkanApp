@@ -28,8 +28,10 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
 
     //mObjects.push_back(new Triangle());
     TriangleSurface* terrain = new TriangleSurface(assetPath + "lasdata.txt");
+    terrain->buildGrid(300,300);
+    terrain->triangulateGrid();
+    terrain->computeNormals();
     mObjects.push_back(terrain);
-    terrain->triangulate();
     //mObjects.push_back((new WorldAxis()));
     //mObjects.push_back(new HeightMap());
     //mObjects.push_back(new ObjMesh(assetPath + "lasdata.obj"));
