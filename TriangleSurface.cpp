@@ -45,7 +45,7 @@ TriangleSurface::TriangleSurface(const std::string &filename)
         Vertex v;
         v.x = float(x);
         v.y = float(z);   //  y = height
-        v.z = float(y);
+        v.z = -float(y);
 
         v.r = v.g = v.b = 0.6f;  //  color
         v.u = v.v = 0.f;
