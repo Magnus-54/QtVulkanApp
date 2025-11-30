@@ -24,6 +24,8 @@ qt_add_executable(QtVulkanApp
     ObjMesh.h ObjMesh.cpp
     phong.frag
     phong.vert
+
+
 )
 # Define the shader files
 set(SHADER_FILES
