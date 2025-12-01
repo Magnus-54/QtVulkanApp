@@ -1,4 +1,3 @@
-// Ball.cpp
 #include "Ball.h"
 #include "TriangleSurface.h"
 #include <algorithm>
@@ -67,5 +66,13 @@ void Ball::resetToStart()
 {
     mPos = mStartPos;
     mVel = QVector3D(0,0,0);
+    mCachedTri = -1;
+}
+
+void Ball::placeAt(const QVector3D& pos)
+{
+    mPos = pos;
+    mVel = QVector3D(0.0f, 0.0f, 0.0f);
+    // Clear cached triangle index so next update re-computes containing triangle
     mCachedTri = -1;
 }

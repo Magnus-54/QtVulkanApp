@@ -15,6 +15,10 @@ class Renderer : public QVulkanWindowRenderer
 public:
     Renderer(QVulkanWindow *w, bool msaa = false);
 
+    // Convert screen pixel (mouseX, mouseY) to a world-space ray (origin ro, direction rd).
+    // Returns true on success.
+    bool screenPointToWorldRay(int mouseX, int mouseY, QVector3D& ro, QVector3D& rd);
+
     //Initializes the Vulkan resources needed,
     // the buffers
     // vertex descriptions for the shaders

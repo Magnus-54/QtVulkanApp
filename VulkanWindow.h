@@ -50,6 +50,7 @@ private:
     int mMouseYlast{0};
 
     class Camera* mCamera{ nullptr };
+    bool mPrevLMB{ false };
 };
 
 #endif // VULKANWINDOW_H

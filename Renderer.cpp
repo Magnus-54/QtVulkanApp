@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include <QVector4D>
 #include <QVulkanFunctions>
 #include <QFile>
 #include <fstream>
@@ -1269,4 +1270,38 @@ void Renderer::destroyTexture(TextureHandle& textureHandle)
 	mDeviceFunctions->vkDestroyImageView(mWindow->device(), textureHandle.mImageView, nullptr);
     mDeviceFunctions->vkDestroyImage(mWindow->device(), textureHandle.mImage, nullptr);
 	mDeviceFunctions->vkFreeMemory(mWindow->device(), textureHandle.mTextureMemory, nullptr);
+}
+
+bool Renderer::screenPointToWorldRay(int mx, int my, QVector3D& ro, QVector3D& rd)
+{
+    const QSize sz = mWindow->swapChainImageSize();
+    if (sz.width() == 0 || sz.height() == 0) return false;
+
+    // NDC X and Y: range [-1, +1]. Note Y flipping for Qt/Vulkan.
+    const float ndcX = (2.0f * float(mx) / float(sz.width())) - 1.0f;
+    const float ndcY = 1.0f - (2.0f * float(my) / float(sz.height())); // keep this if your previous code did this
+
+    // Build projection exactly like setViewProjectionMatrix stores it:
+    QMatrix4x4 proj = mCamera.projectionMatrix();
+    proj = proj * mWindow->clipCorrectionMatrix(); // projection already corrected for Vulkan
+
+    QMatrix4x4 view = mCamera.viewMatrix();
+    QMatrix4x4 vp = proj * view; // matches what shader uses (proj*clipCorrection) * view
+
+    bool ok;
+    QMatrix4x4 inv = vp.inverted(&ok);
+    if (!ok) return false;
+
+    // IMPORTANT: Vulkan NDC z-range is 0..1, so unproject using z_near = 0, z_far = 1
+    QVector4D nearH = inv * QVector4D(ndcX, ndcY, 0.0f, 1.0f); // near z = 0
+    QVector4D farH  = inv * QVector4D(ndcX, ndcY, 1.0f, 1.0f); // far  z = 1
+
+    if (qFuzzyCompare(nearH.w(), 0.0f) || qFuzzyCompare(farH.w(), 0.0f)) return false;
+
+    QVector3D pNear = QVector3D(nearH.toVector3D()) / nearH.w();
+    QVector3D pFar  = QVector3D(farH.toVector3D())  / farH.w();
+
+    ro = pNear;
+    rd = (pFar - pNear).normalized();
+    return true;
 }

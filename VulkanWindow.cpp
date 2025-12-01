@@ -1,6 +1,9 @@
 #include "VulkanWindow.h"
 #include "Renderer.h"
 #include <QKeyEvent>
+#include "Input.h"
+#include "TriangleSurface.h"
+
 
 VulkanWindow::VulkanWindow()
 {
@@ -186,12 +189,18 @@ void VulkanWindow::wheelEvent(QWheelEvent *event)
 
 void VulkanWindow::mousePressEvent(QMouseEvent *event)
 {
+    int x = event->pos().x();
+    int y = event->pos().y();
+    mInput.MOUSEX = x;
+    mInput.MOUSEY = y;
     if (event->button() == Qt::RightButton)
         mInput.RMB = true;
     if (event->button() == Qt::LeftButton)
         mInput.LMB = true;
     if (event->button() == Qt::MiddleButton)
         mInput.MMB = true;
+
+    qDebug() << "mousePressEvent pos" << x << y;
 }
 
 void VulkanWindow::mouseReleaseEvent(QMouseEvent *event)
@@ -206,6 +215,10 @@ void VulkanWindow::mouseReleaseEvent(QMouseEvent *event)
 
 void VulkanWindow::mouseMoveEvent(QMouseEvent *event)
 {
+    int x = event->pos().x();
+    int y = event->pos().y();
+    mInput.MOUSEX = x;
+    mInput.MOUSEY = y;
     if (mInput.RMB)
     {
         //Using mMouseXYlast as deltaXY so we don't need extra variables
@@ -255,5 +268,54 @@ void VulkanWindow::handleInput()
             renderer->mBallVis->setTransform(M);
         }
     }
+    bool curLMB = mInput.LMB;
+    if (curLMB && !mPrevLMB)
+    {
+        qDebug() << "Click at screen:" << mInput.MOUSEX << mInput.MOUSEY;
+        if (renderer)
+        {
+            QVector3D ro, rd;
+            if (renderer->screenPointToWorldRay(mInput.MOUSEX, mInput.MOUSEY, ro, rd))
+            {
+                qDebug() << "Ray from" << ro << "dir" << rd;
+                auto& objs = renderer->getObjects();
+                if (!objs.empty())
+                {
+                    TriangleSurface* terrain = dynamic_cast<TriangleSurface*>(objs.at(0));
+                    if (terrain)
+                    {
+                        QVector3D hit;
+                        int triIdx = -1;
+                        if (terrain->rayIntersect(ro, rd, hit, &triIdx))
+                        {
+                            QVector3D n = terrain->triangleNormal(triIdx);
+                            QVector3D placePos = hit + n * renderer->mBall.radius();
+                            renderer->mBall.placeAt(placePos);
+
+                            // update visual sphere immediately
+                            if (renderer->mBallVis)
+                            {
+                                QMatrix4x4 M;
+                                M.setToIdentity();
+                                M.translate(renderer->mBall.position());
+                                M.scale(renderer->mBall.radius());
+                                renderer->mBallVis->setTransform(M);
+                            }
+                            qDebug() << "Hit terrain at" << hit << "triangle" << triIdx;
+                        }
+                        else
+                        {
+                            qDebug() << "No terrain hit.";
+                        }
+                    }
+                }
+            }
+            else
+            {
+                qDebug() << "screenPointToWorldRay failed.";
+            }
+        }
+    }
+    mPrevLMB = curLMB;
 
 }

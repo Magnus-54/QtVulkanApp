@@ -361,3 +361,59 @@ float TriangleSurface::heightAt(float x, float z, bool &outHasHeight) const
     }
     return bestY;
 }
+
+bool TriangleSurface::rayIntersect(const QVector3D& ro, const QVector3D& rd, QVector3D& outPos, int* outTriIdx)
+{
+    const float EPS = 1e-6f;
+    float bestT = std::numeric_limits<float>::infinity();
+    bool found = false;
+    int bestTri = -1;
+
+    // Ensure indices define triangles in groups of three
+    const std::vector<Vertex>& verts = mVertices;        // VisualObject protected member
+    const std::vector<uint32_t>& inds = mIndices;       // VisualObject protected member
+    const size_t triCount = inds.size() / 3;
+    if (triCount == 0) return false;
+
+    for (size_t i = 0; i < triCount; ++i) {
+        uint32_t i0 = inds[3*i + 0];
+        uint32_t i1 = inds[3*i + 1];
+        uint32_t i2 = inds[3*i + 2];
+
+        const Vertex& v0 = verts[i0];
+        const Vertex& v1 = verts[i1];
+        const Vertex& v2 = verts[i2];
+
+        QVector3D p0(v0.x, v0.y, v0.z);
+        QVector3D p1(v1.x, v1.y, v1.z);
+        QVector3D p2(v2.x, v2.y, v2.z);
+
+        QVector3D edge1 = p1 - p0;
+        QVector3D edge2 = p2 - p0;
+        QVector3D h = QVector3D::crossProduct(rd, edge2);
+        float a = QVector3D::dotProduct(edge1, h);
+        if (a > -EPS && a < EPS) continue; // Ray parallel to triangle
+
+        float f = 1.0f / a;
+        QVector3D s = ro - p0;
+        float u = f * QVector3D::dotProduct(s, h);
+        if (u < 0.0f || u > 1.0f) continue;
+
+        QVector3D q = QVector3D::crossProduct(s, edge1);
+        float v = f * QVector3D::dotProduct(rd, q);
+        if (v < 0.0f || u + v > 1.0f) continue;
+
+        float t = f * QVector3D::dotProduct(edge2, q);
+        if (t > EPS && t < bestT) {
+            bestT = t;
+            bestTri = int(i);
+            found = true;
+        }
+    }
+
+    if (found) {
+        outPos = ro + rd * bestT;
+        if (outTriIdx) *outTriIdx = bestTri;
+    }
+    return found;
+}

@@ -9,6 +9,9 @@ class TriangleSurface : public VisualObject
 {
 public:
     TriangleSurface();
+    // Raycast against the terrain triangles stored in this object.
+    // Returns true and writes intersection world position to outPos (and optionally triangle index) if hit.
+    bool rayIntersect(const QVector3D& ro, const QVector3D& rd, QVector3D& outPos, int* outTriIdx = nullptr);
     TriangleSurface(const std::string& filename);
     void buildGrid(int Nx, int Nz);
     void triangulateGrid();

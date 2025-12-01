@@ -12,6 +12,8 @@ public:
     void reset(const QVector3D &pos);
     void update(float dt, const TriangleSurface* terrain);
     void resetToStart();
+    // Place the ball at given world position and zero velocities (used by picking)
+    void placeAt(const QVector3D& pos);
 
     QVector3D position() const { return mPos; }
     QVector3D velocity() const { return mVel; }
