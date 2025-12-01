@@ -32,6 +32,20 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
     terrain->triangulateGrid();
     terrain->computeNormals();
     mObjects.push_back(terrain);
+
+    mBallVis = new ObjMesh(assetPath + "sphere.obj");
+    mObjects.push_back(mBallVis);
+    if (terrain)
+    {
+        bool has = false;
+        float cx = terrain->centerX();
+        float cz = terrain->centerZ();
+        float h = terrain->heightAt(cx, cz, has);
+        QVector3D start(cx, has ? (h + 2.0f) : 2.0f, cz);
+        float realRadius = 15.0f;
+        mBall = Ball(start, realRadius, 1.0f);
+    }
+
     //mObjects.push_back((new WorldAxis()));
     //mObjects.push_back(new HeightMap());
     //mObjects.push_back(new ObjMesh(assetPath + "lasdata.obj"));
@@ -53,9 +67,9 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
         mMap.insert(std::pair<std::string, VisualObject*>{(*it)->getName(),*it});
 
 	//Inital position of the camera
-    mCamera.setPosition(QVector3D(130, -300, -460));
-    mCamera.pitch(-340.0f);
-    mCamera.yaw(25);
+    mCamera.setPosition(QVector3D(385, -300, 360));
+    mCamera.pitch(-345.0f);
+    mCamera.yaw(120);
     //Need access to our VulkanWindow so making a convenience pointer
     mVulkanWindow = dynamic_cast<VulkanWindow*>(w);
 }
@@ -359,6 +373,26 @@ void Renderer::startNextFrame()
     //qDebug() << std::to_string(mCamera.getPitch());
     //qDebug() << mCamera.position();
 
+    const float dt = 1.0f / 60.0f;
+
+    TriangleSurface* terrain = dynamic_cast<TriangleSurface*>(mObjects.at(0));
+    if (terrain)
+    {
+        mBall.update(dt, terrain);
+
+        // update ball visual transform if available
+        if (mBallVis) {
+            QVector3D p = mBall.position();
+            QMatrix4x4 M;
+            M.setToIdentity();
+            M.translate(p);
+            // scale mesh so its visual size matches ball radius
+            M.scale(mBall.radius());
+            mBallVis->setTransform(M);
+        }
+    }
+
+    //qDebug() << "Ball pos: " << mBall.position().x() << ", " << mBall.position().y() << ", " << mBall.position().z();
     VkCommandBuffer commandBuffer = mWindow->currentCommandBuffer();
 
 	setRenderPassParameters(commandBuffer);

@@ -24,6 +24,7 @@ qt_add_executable(QtVulkanApp
     ObjMesh.h ObjMesh.cpp
     phong.frag
     phong.vert
+    Ball.h Ball.cpp
 
 
 )
