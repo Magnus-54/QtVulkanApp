@@ -229,6 +229,8 @@ void TriangleSurface::triangulateGrid()
             mIndices.push_back(i2);
         }
     }
+    size_t triCount = mIndices.size() / 3;
+    mTriFriction.assign(triCount, 0.0f);
 }
 void TriangleSurface::computeNormals()
 {
@@ -416,4 +418,31 @@ bool TriangleSurface::rayIntersect(const QVector3D& ro, const QVector3D& rd, QVe
         if (outTriIdx) *outTriIdx = bestTri;
     }
     return found;
+}
+
+void TriangleSurface::setFrictionForTriangle(int triIndex, float mu)
+{
+    if (triIndex < 0) return;
+    if (triIndex >= (int)mTriFriction.size()) return;
+    mTriFriction[triIndex] = mu;
+}
+
+float TriangleSurface::frictionAtTriangle(int triIndex) const
+{
+    if (triIndex < 0 || triIndex >= (int)mTriFriction.size()) return 0.0f;
+    return mTriFriction[triIndex];
+}
+
+void TriangleSurface::markFrictionRect(float minX, float maxX, float minZ, float maxZ, float mu)
+{
+    int triCount = (int)(mIndices.size() / 3);
+    for (int t = 0; t < triCount; ++t) {
+        int ia = mIndices[3*t+0];
+        int ib = mIndices[3*t+1];
+        int ic = mIndices[3*t+2];
+        float cx = (mVertices[ia].x + mVertices[ib].x + mVertices[ic].x) / 3.0f;
+        float cz = (mVertices[ia].z + mVertices[ib].z + mVertices[ic].z) / 3.0f;
+        if (cx >= minX && cx <= maxX && cz >= minZ && cz <= maxZ)
+            setFrictionForTriangle(t, mu);
+    }
 }

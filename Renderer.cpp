@@ -10,6 +10,7 @@
 #include "HeightMap.h"
 #include "stb_image.h"
 #include "ObjMesh.h"
+#include "Frictionoverlay.h"
 
 /*** Renderer class ***/
 Renderer::Renderer(QVulkanWindow *w, bool msaa)
@@ -32,7 +33,15 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
     terrain->buildGrid(300,300);
     terrain->triangulateGrid();
     terrain->computeNormals();
+
+    float minX = terrain->minX() + (terrain->maxX() - terrain->minX()) * 0.1f;
+    float maxX = terrain->minX() + (terrain->maxX() - terrain->minX()) * 0.3f;
+    float minZ = terrain->minZ() + (terrain->maxZ() - terrain->minZ()) * 0.5f;
+    float maxZ = terrain->minZ() + (terrain->maxZ() - terrain->minZ()) * 0.7f;
+    terrain->markFrictionRect(minX, maxX, minZ, maxZ, 0.7f);
     mObjects.push_back(terrain);
+    FrictionOverlay* overlay = new FrictionOverlay(terrain, 0.5f);
+    mObjects.push_back(overlay);
 
     mBallVis = new ObjMesh(assetPath + "sphere.obj");
     mObjects.push_back(mBallVis);

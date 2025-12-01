@@ -22,10 +22,13 @@ public:
     float mass() const { return mMass; }
     QVector3D mStartPos;
 
+    void setExtraFrictionFromTerrain(float mu) { mExtraFriction = mu; }
+
 private:
     QVector3D mPos;
     QVector3D mVel;
     float mRadius;
     float mMass;
     int mCachedTri = -1;
+    float mExtraFriction = 0.0f;
 };

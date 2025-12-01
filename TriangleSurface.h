@@ -30,6 +30,12 @@ public:
     float centerX() const { return 0.5f * (mMinX + mMaxX); }
     float centerZ() const { return 0.5f * (mMinZ + mMaxZ); }
 
+    //Friction stuff
+    std::vector<float> mTriFriction;
+    void setFrictionForTriangle(int triIndex, float mu);
+    float frictionAtTriangle(int triIndex) const;
+    void markFrictionRect(float minX, float maxX, float minZ, float maxZ, float mu);
+
 private:
     int mNx = 0, mNz = 0;
     float mMinX, mMaxX, mMinZ, mMaxZ;

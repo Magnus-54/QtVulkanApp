@@ -40,7 +40,25 @@ void Ball::update(float dt, const TriangleSurface* terrain)
     const float baseDamping = 0.02f;
     QVector3D damping = - baseDamping * mVel;
 
-    QVector3D a = g_par + damping / mMass;
+    QVector3D frictionAccel(0,0,0);
+    if (tri >= 0) {
+        float mu = terrain->frictionAtTriangle(tri);
+        if (mu > 0.0f) {
+            // normal force per mass = |g · n|
+            float normalAcc = std::abs(QVector3D::dotProduct(g, n));
+            float vn = QVector3D::dotProduct(mVel, n);
+            QVector3D v_t = mVel - n * vn;
+            float speed_t = v_t.length();
+            if (speed_t > 1e-5f) {
+                QVector3D v_dir = v_t / speed_t;
+                float a_fric_mag = mu * normalAcc; // acceleration magnitude due to kinetic friction
+                frictionAccel = - a_fric_mag * v_dir;
+            } else {
+                frictionAccel = - mu * normalAcc * mVel;
+            }
+        }
+    }
+    QVector3D a = g_par + damping + frictionAccel/ mMass;
 
     // Semi-implicit Euler
     mVel += a * dt;

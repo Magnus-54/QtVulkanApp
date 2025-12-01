@@ -25,6 +25,7 @@ qt_add_executable(QtVulkanApp
     phong.frag
     phong.vert
     Ball.h Ball.cpp
+    Frictionoverlay.h Frictionoverlay.cpp
 
 
 )
