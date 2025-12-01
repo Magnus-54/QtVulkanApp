@@ -6,8 +6,8 @@
 static const QVector3D GRAVITY = QVector3D(0.0f, -9.81f, 0.0f);
 
 Ball::Ball() : mPos(0,10,0), mVel(0,0,0), mRadius(0.5f), mMass(1.0f) {}
-Ball::Ball(const QVector3D &pos, float radius, float mass)
-    : mPos(pos), mVel(0,0,0), mRadius(radius), mMass(mass) {}
+//Ball::Ball(const QVector3D &pos, float radius, float mass)
+//    : mPos(pos), mVel(0,0,0), mRadius(radius), mMass(mass) {}
 
 void Ball::reset(const QVector3D &pos)
 {
@@ -61,4 +61,11 @@ void Ball::update(float dt, const TriangleSurface* terrain)
     }
 
     mPos = newPos;
+}
+
+void Ball::resetToStart()
+{
+    mPos = mStartPos;
+    mVel = QVector3D(0,0,0);
+    mCachedTri = -1;
 }
