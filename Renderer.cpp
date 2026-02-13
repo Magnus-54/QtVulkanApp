@@ -190,6 +190,24 @@ void Renderer::initResources()
 
     VkPipelineShaderStageCreateInfo shaderStagesC[] = { vertShaderCreateInfoC, fragShaderCreateInfoC };
 
+    /*************** DebugMaterial ******************/
+    VkShaderModule mDebugVertShader = createShader(QStringLiteral(":/debug_vert.spv"));
+    VkShaderModule mDebugFragShader = createShader(QStringLiteral(":/debug_frag.spv"));
+
+    VkPipelineShaderStageCreateInfo debugVertStage{};
+    debugVertStage.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    debugVertStage.stage  = VK_SHADER_STAGE_VERTEX_BIT;
+    debugVertStage.module = mDebugVertShader;
+    debugVertStage.pName  = "main";
+
+    VkPipelineShaderStageCreateInfo debugFragStage{};
+    debugFragStage.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    debugFragStage.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
+    debugFragStage.module = mDebugFragShader;
+    debugFragStage.pName  = "main";
+
+    VkPipelineShaderStageCreateInfo debugStages[] = { debugVertStage, debugFragStage };
+
 	/*********************** Graphics pipeline ********************************/
     VkGraphicsPipelineCreateInfo pipelineInfo{};    //Will use this variable a lot in the next 100s of lines
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -266,8 +284,9 @@ void Renderer::initResources()
 
 	//Making a pipeline for drawing lines
 	mColorMaterial.pipeline = mPipeline1;                       // reusing most of the settings from the first pipeline
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;   // draw POINTS
-    //inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;   // draw lines
+    //inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;   // draw POINTS
+    //inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;    // draw lines
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;   // draw triangles
     rasterization.polygonMode = VK_POLYGON_MODE_FILL;           // VK_POLYGON_MODE_LINE will make a wireframe; VK_POLYGON_MODE_FILL
     rasterization.lineWidth = 5.0f;
     pipelineInfo.pInputAssemblyState = &inputAssembly;
@@ -275,6 +294,15 @@ void Renderer::initResources()
     result = mDeviceFunctions->vkCreateGraphicsPipelines(logicalDevice, mPipelineCache, 1, &pipelineInfo, nullptr, &mColorMaterial.pipeline);
     if (result != VK_SUCCESS)
         qFatal("Failed to create graphics pipeline: %d", result);
+
+    // *************** Create Debug pipeline ******************
+    pipelineInfo.pStages = debugStages;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    rasterization.polygonMode = VK_POLYGON_MODE_FILL;
+
+    result = mDeviceFunctions->vkCreateGraphicsPipelines(logicalDevice, mPipelineCache, 1, &pipelineInfo, nullptr, &mDebugPipeline);
+    if (result != VK_SUCCESS)
+        qFatal("Failed to create Debug pipeline: %d", result);
 
 
 	// Destroying the shader modules, we won't need them anymore after the pipeline is created
@@ -286,6 +314,10 @@ void Renderer::initResources()
         mDeviceFunctions->vkDestroyShaderModule(logicalDevice, mColorMaterial.vertShaderModule, nullptr);
     if (mColorMaterial.fragShaderModule)
         mDeviceFunctions->vkDestroyShaderModule(logicalDevice, mColorMaterial.fragShaderModule, nullptr);
+    if (mDebugVertShader)
+        mDeviceFunctions->vkDestroyShaderModule(logicalDevice, mDebugVertShader, nullptr);
+    if (mDebugFragShader)
+        mDeviceFunctions->vkDestroyShaderModule(logicalDevice, mDebugFragShader, nullptr);
 
 	// Create the uniform buffer
 	createUniformBuffer();
@@ -338,10 +370,11 @@ void Renderer::startNextFrame()
     for (std::vector<VisualObject*>::iterator it=mObjects.begin(); it!=mObjects.end(); it++)
     {
         //Draw type
-		if ((*it)->getDrawType() == 0)
-			mDeviceFunctions->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline1);
-		else
-			mDeviceFunctions->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mColorMaterial.pipeline);
+        // if ((*it)->getDrawType() == 0)
+        // 	mDeviceFunctions->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline1);
+        // else
+        // 	mDeviceFunctions->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mColorMaterial.pipeline);
+        mDeviceFunctions->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mDebugPipeline);
 
         QMatrix4x4 mvp = mCamera.projectionMatrix() * mCamera.viewMatrix() * (*it)->getMatrix();
         setModelMatrix((*it)->getMatrix()); //mvp);
@@ -789,6 +822,11 @@ void Renderer::releaseResources()
     if (mColorMaterial.pipeline) {
         mDeviceFunctions->vkDestroyPipeline(dev, mColorMaterial.pipeline, nullptr);
         mColorMaterial.pipeline = VK_NULL_HANDLE;
+    }
+
+    if (mDebugPipeline) {
+        mDeviceFunctions->vkDestroyPipeline(dev, mDebugPipeline, nullptr);
+        mDebugPipeline = VK_NULL_HANDLE;
     }
 
     if (mPipelineLayout) {

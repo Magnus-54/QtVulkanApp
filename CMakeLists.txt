@@ -22,6 +22,8 @@ qt_add_executable(QtVulkanApp
     stb_image.cpp
     HeightMap.h HeightMap.cpp
     ObjMesh.h ObjMesh.cpp
+    debug.frag
+    debug.vert
 )
 # Define the shader files
 set(SHADER_FILES
@@ -29,6 +31,8 @@ set(SHADER_FILES
     color.vert
     texture.frag
     texture.vert
+    debug.frag
+    debug.vert
 )
 
 # Add the shader files to the project
@@ -64,11 +68,22 @@ set_source_files_properties("texture_vert.spv"
     PROPERTIES QT_RESOURCE_ALIAS "texture_vert.spv"
 )
 
+set_source_files_properties("debug_frag.spv"
+    PROPERTIES QT_RESOURCE_ALIAS "debug_frag.spv"
+)
+
+set_source_files_properties("debug_vert.spv"
+    PROPERTIES QT_RESOURCE_ALIAS "debug_vert.spv"
+)
+
 set(QtVulkanApp_resource_files
     "color_frag.spv"
     "color_vert.spv"
     "texture_frag.spv"
     "texture_vert.spv"
+    "debug_frag.spv"
+    "debug_vert.spv"
+
 )
 
 qt_add_resources(QtVulkanApp "QtVulkanApp"
@@ -123,9 +138,27 @@ add_custom_target(
     COMMENT "Compiling texture vertex shader"
 )
 
+add_custom_target(
+    PreBuildCommandDF ALL
+    COMMAND glslc debug.frag -o debug_frag.spv
+#   This version includes the debug info in the compiled shader - good for RenderDoc
+#   COMMAND glslangValidator -g -V -o debug_frag.spv debug.frag
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Compiling debug fragment shader"
+)
+add_custom_target(
+    PreBuildCommandDV ALL
+    COMMAND glslc debug.vert -o debug_vert.spv
+#   COMMAND glslangValidator -g -V -o debug_vert.spv debug.vert
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Compiling debug vertex shader"
+)
+
 add_dependencies(QtVulkanApp PreBuildCommandCF)
 add_dependencies(QtVulkanApp PreBuildCommandCV)
 add_dependencies(QtVulkanApp PreBuildCommandTF)
 add_dependencies(QtVulkanApp PreBuildCommandTV)
+add_dependencies(QtVulkanApp PreBuildCommandDF)
+add_dependencies(QtVulkanApp PreBuildCommandDV)
 
 
