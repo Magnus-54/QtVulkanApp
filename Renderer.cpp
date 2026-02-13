@@ -27,7 +27,12 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
     }
 
     //mObjects.push_back(new Triangle());
-    mObjects.push_back((new TriangleSurface(assetPath + "lasdata.txt")));
+    //mObjects.push_back((new TriangleSurface(assetPath + "lasdata.txt")));
+    TriangleSurface* terrain = new TriangleSurface(assetPath + "lasdata.txt");
+    terrain->buildGrid(300, 300);
+    terrain->triangulateGrid();
+    terrain->computeNormals();
+    mObjects.push_back(terrain);
     //mObjects.push_back((new WorldAxis()));
     //mObjects.push_back(new HeightMap());
     //mObjects.push_back(new ObjMesh(assetPath + "lasdata.obj"));
@@ -38,7 +43,7 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
     //mObjects.at(1)->setName("quad");
     //mObjects.at(0)->setName("axis");
     //mObjects.at(3)->setName("terrain");
-    mObjects.at(0)->setName("suzanne");
+    //mObjects.at(0)->setName("suzanne");
     //static_cast<HeightMap*>(mObjects.at(3))->makeTerrain(assetPath + "Heightmap.jpg");
 
 
@@ -203,8 +208,8 @@ void Renderer::initResources()
 	// **** Input Assembly **** - describes how primitives are assembled in the Graphics pipeline
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    //inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;       //Draw triangles
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;       //Draw points
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;       //Draw triangles
+    //inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;       //Draw points
 	inputAssembly.primitiveRestartEnable = VK_FALSE;                    //Allow strips to be connected, not used in TriangleList
     pipelineInfo.pInputAssemblyState = &inputAssembly;
 

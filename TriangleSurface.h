@@ -10,6 +10,22 @@ class TriangleSurface : public VisualObject
 public:
     TriangleSurface();
     TriangleSurface(const std::string& filename);
+    void buildGrid(int Nx, int Nz);
+    void triangulateGrid();
+    void computeNormals();
+    void fillEmptyCellsNearest();
+
+private:
+    int mNx = 0;
+    int mNz = 0;
+    float mMinX;
+    float mMaxX;
+    float mMinZ;
+    float mMaxZ;
+
+    std::vector<float> mHeightGrid;
+    std::vector<int> mCountGrid;
+
 };
 
 #endif // TRIANGLESURFACE_H
