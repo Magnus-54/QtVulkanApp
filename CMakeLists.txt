@@ -24,6 +24,7 @@ qt_add_executable(QtVulkanApp
     ObjMesh.h ObjMesh.cpp
     debug.frag
     debug.vert
+    Ball.h Ball.cpp
 )
 # Define the shader files
 set(SHADER_FILES

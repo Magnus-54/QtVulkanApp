@@ -2,6 +2,7 @@
 #define VISUALOBJECT_H
 
 #include <QVulkanWindow>
+#include <QMatrix4x4>
 #include <vector>
 #include "Vertex.h"
 #include "Utilities.h"
@@ -10,6 +11,7 @@ class VisualObject
 {
 public:
     VisualObject();
+    virtual ~VisualObject(){}
 
     void move(float x, float y = 0.0f, float z = 0.0f);
     void scale(float s);
@@ -33,6 +35,7 @@ public:
 	inline std::vector<uint32_t> getIndices() const { return mIndices; }
 
     QVector3D getPosition();
+    void setTransform(const QMatrix4x4& m);
     void setPosition(float x, float y, float z);
 
 protected:

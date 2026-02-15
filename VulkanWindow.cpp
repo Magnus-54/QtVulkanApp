@@ -240,4 +240,21 @@ void VulkanWindow::handleInput()
         if (mInput.E)
             mCamera->updateHeigth(-mCameraSpeed);
     }
+    Renderer* renderer = dynamic_cast<Renderer*>(mRenderer);
+    if (mInput.SPACE)
+    {
+        renderer->mBall.reset();
+
+        //reset the visual sphere
+        if (renderer->mBallVis)
+        {
+            QMatrix4x4 M;
+            M.setToIdentity();
+            M.translate(renderer->mBall.position());
+            M.scale(renderer->mBall.radius());
+            renderer->mBallVis->setTransform(M);
+        }
+    }
 }
+
+

@@ -279,4 +279,103 @@ void TriangleSurface::computeNormals()
     }
 }
 
+// helpers for barycentric test in XZ
+static bool barycentricXZ(const Vertex &A, const Vertex &B, const Vertex &C, float x, float z, float &u, float &v, float &w)
+{
+    float ax = A.x, az = A.z;
+    float bx = B.x, bz = B.z;
+    float cx = C.x, cz = C.z;
+
+    float denom = (bz - cz)*(ax - cx) + (cx - bx)*(az - cz);
+    if (std::abs(denom) < 1e-9f) return false;
+    u = ((bz - cz)*(x - cx) + (cx - bx)*(z - cz)) / denom;
+    v = ((cz - az)*(x - cx) + (ax - cx)*(z - cz)) / denom;
+    w = 1.0f - u - v;
+    return (u >= -1e-6f && v >= -1e-6f && w >= -1e-6f);
+}
+
+int TriangleSurface::findContainingTriangle(float x, float z) const
+{
+    if (mNx <= 1 || mNz <= 1) return -1;
+
+    // map to grid cell
+    float fx = (x - mMinX) / (mMaxX - mMinX);
+    float fz = (z - mMinZ) / (mMaxZ - mMinZ);
+    int ix = std::clamp(int(std::floor(fx * (mNx - 1))), 0, mNx - 2);
+    int iz = std::clamp(int(std::floor(fz * (mNz - 1))), 0, mNz - 2);
+
+    int i0 = iz * mNx + ix;
+    int i1 = i0 + 1;
+    int i2 = i0 + mNx;
+    int i3 = i2 + 1;
+
+    // tri 0: (i0, i1, i2)
+    float u,v,w;
+    if (barycentricXZ(mVertices[i0], mVertices[i1], mVertices[i2], x, z, u, v, w)) {
+        int cellIndex = iz * (mNx - 1) + ix;
+        return cellIndex * 2;
+    }
+    // tri 1: (i1, i3, i2)
+    if (barycentricXZ(mVertices[i1], mVertices[i3], mVertices[i2], x, z, u, v, w)) {
+        int cellIndex = iz * (mNx - 1) + ix;
+        return cellIndex * 2 + 1;
+    }
+
+    // fallback brute force if not found
+    for (size_t t = 0; t + 2 < mIndices.size(); t += 3) {
+        int ia = mIndices[t+0], ib = mIndices[t+1], ic = mIndices[t+2];
+        if (barycentricXZ(mVertices[ia], mVertices[ib], mVertices[ic], x, z, u, v, w)) {
+            return int(t/3);
+        }
+    }
+    return -1;
+}
+
+bool TriangleSurface::pointInTriangle(float x, float z, int triIndex) const
+{
+    if (triIndex < 0) return false;
+    int base = triIndex * 3;
+    if (base + 2 >= (int)mIndices.size()) return false;
+    int ia = mIndices[base+0], ib = mIndices[base+1], ic = mIndices[base+2];
+    float u,v,w;
+    return barycentricXZ(mVertices[ia], mVertices[ib], mVertices[ic], x, z, u, v, w);
+}
+
+QVector3D TriangleSurface::triangleNormal(int triIndex) const
+{
+    int base = triIndex * 3;
+    if (base + 2 >= (int)mIndices.size()) return QVector3D(0,1,0);
+    int ia = mIndices[base+0], ib = mIndices[base+1], ic = mIndices[base+2];
+    QVector3D A(mVertices[ia].x, mVertices[ia].y, mVertices[ia].z);
+    QVector3D B(mVertices[ib].x, mVertices[ib].y, mVertices[ib].z);
+    QVector3D C(mVertices[ic].x, mVertices[ic].y, mVertices[ic].z);
+    QVector3D N = QVector3D::crossProduct(B - A, C - A);
+    if (N.length() < 1e-6f) return QVector3D(0,1,0);
+    return N.normalized();
+}
+
+float TriangleSurface::heightAt(float x, float z, bool &outHasHeight) const
+{
+    outHasHeight = false;
+    int tri = findContainingTriangle(x, z);
+    if (tri >= 0) {
+        int base = tri * 3;
+        int ia = mIndices[base+0], ib = mIndices[base+1], ic = mIndices[base+2];
+        float u,v,w;
+        if (barycentricXZ(mVertices[ia], mVertices[ib], mVertices[ic], x, z, u, v, w)) {
+            outHasHeight = true;
+            return u * mVertices[ia].y + v * mVertices[ib].y + w * mVertices[ic].y;
+        }
+    }
+    // fallback: nearest vertex
+    float bestD2 = std::numeric_limits<float>::infinity();
+    float bestY = 0.0f;
+    for (const auto &vv : mVertices) {
+        float dx = vv.x - x;
+        float dz = vv.z - z;
+        float d2 = dx*dx + dz*dz;
+        if (d2 < bestD2) { bestD2 = d2; bestY = vv.y; }
+    }
+    return bestY;
+}
 

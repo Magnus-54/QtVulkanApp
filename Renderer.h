@@ -7,6 +7,8 @@
 #include "Camera.h"
 #include "VisualObject.h"
 #include "Utilities.h"
+#include "Ball.h"
+#include "ObjMesh.h"
 
 class Renderer : public QVulkanWindowRenderer
 {
@@ -106,6 +108,8 @@ private:
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags requiredProperties);
 
     Camera mCamera;
+    Ball mBall;
+    ObjMesh* mBallVis = nullptr;
     class VulkanWindow* mVulkanWindow{ nullptr };
 
 	VkCommandBuffer beginTransientCommandBuffer();

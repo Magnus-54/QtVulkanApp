@@ -34,3 +34,8 @@ void VisualObject::setPosition(float x, float y, float z)
     mMatrix(1, 3) = y; // Position in the y-axis
     mMatrix(2, 3) = z; // Position in the z-axis
 }
+
+void VisualObject::setTransform(const QMatrix4x4& m)
+{
+    mMatrix = m;
+}
