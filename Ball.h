@@ -9,7 +9,7 @@ public:
     //Ball(const QVector3D &pos, float radius = 0.5f, float mass = 1.0f);
     Ball(const QVector3D &pos, float radius, float mass)
         : mPos(pos), mVel(0,0,0), mRadius(radius), mMass(mass), mStartPos(pos) {}
-    void reset();
+    void reset(float x, float z);
     void update(float dt, const TriangleSurface* terrain);
 
     QVector3D position() const { return mPos; }

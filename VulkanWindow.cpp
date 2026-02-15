@@ -243,7 +243,7 @@ void VulkanWindow::handleInput()
     Renderer* renderer = dynamic_cast<Renderer*>(mRenderer);
     if (mInput.SPACE)
     {
-        renderer->mBall.reset();
+        renderer->mBall.reset(0, 0);
 
         //reset the visual sphere
         if (renderer->mBallVis)
@@ -254,6 +254,22 @@ void VulkanWindow::handleInput()
             M.scale(renderer->mBall.radius());
             renderer->mBallVis->setTransform(M);
         }
+    }
+    if(mInput.UP)
+    {
+        renderer->mBall.reset(1, 0);
+    }
+    if(mInput.DOWN)
+    {
+        renderer->mBall.reset(-1, 0);
+    }
+    if(mInput.RIGHT)
+    {
+        renderer->mBall.reset(0, 1);
+    }
+    if(mInput.LEFT)
+    {
+        renderer->mBall.reset(0, -1);
     }
 }
 

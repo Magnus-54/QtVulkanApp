@@ -8,8 +8,13 @@ Ball::Ball() : mPos(0,0,0), mVel(0,0,0), mRadius(1.0f), mMass(1.0f) {}
 // Ball::Ball(const QVector3D &pos, float radius, float mass)
 //     : mPos(pos), mVel(0,0,0), mRadius(radius), mMass(mass) {}
 
-void Ball::reset()
+void Ball::reset(float x, float z)
 {
+
+    mStartPos.setX(mStartPos.x() + x);
+    mStartPos.setZ(mStartPos.z() + z);
+    mStartPos.setY(mStartPos.y() - 100);
+
     mPos = mStartPos;
     mVel = QVector3D(0,0,0);
     mCachedTri = -1;
