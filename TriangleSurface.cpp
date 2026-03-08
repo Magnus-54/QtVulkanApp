@@ -379,3 +379,40 @@ float TriangleSurface::heightAt(float x, float z, bool &outHasHeight) const
     return bestY;
 }
 
+void TriangleSurface::setFrictionZone(float xMin, float xMax, float zMin, float zMax, float frictionCoeff)
+{
+    mFricXMin = xMin;
+    mFricXMax = xMax;
+    mFricZMin = zMin;
+    mFricZMax = zMax;
+    mFrictionMu = frictionCoeff;
+    qDebug() << "Friction zone set: x[" << xMin << "," << xMax
+             << "] z[" << zMin << "," << zMax << "] mu=" << frictionCoeff;
+}
+
+void TriangleSurface::markFrictionZoneColor()
+{
+    //set a fake normal
+    QVector3D frictionNormal = QVector3D(0.7f, 0.0f, -0.7f).normalized();
+
+    int count = 0;
+    for (auto &v : mVertices)
+    {
+        if (v.x >= mFricXMin && v.x <= mFricXMax &&
+            v.z >= mFricZMin && v.z <= mFricZMax)
+        {
+            v.r = frictionNormal.x();
+            v.g = frictionNormal.y();
+            v.b = frictionNormal.z();
+            count++;
+        }
+    }
+    qDebug() << "markFrictionZoneColor: tinted" << count << "vertices";
+}
+
+bool TriangleSurface::isInFrictionZone(float x, float z) const
+{
+    return (x >= mFricXMin && x <= mFricXMax &&
+            z >= mFricZMin && z <= mFricZMax);
+}
+

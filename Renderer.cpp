@@ -32,6 +32,17 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
     terrain->buildGrid(300, 300);
     terrain->triangulateGrid();
     terrain->computeNormals();
+
+
+    float rangeX = terrain->maxX() - terrain->minX();
+    float rangeZ = terrain->maxZ() - terrain->minZ();
+    float fzXmin = terrain->minX() + rangeX * 0.45f;
+    float fzXmax = terrain->minX() + rangeX * 0.75f;
+    float fzZmin = terrain->minZ() + rangeZ * 0.35f;
+    float fzZmax = terrain->minZ() + rangeZ * 0.65f;
+    terrain->setFrictionZone(fzXmin, fzXmax, fzZmin, fzZmax, 0.3f);  // mu = 0.3
+    terrain->markFrictionZoneColor();
+
     mObjects.push_back(terrain);
     mBallVis = new ObjMesh(assetPath + "sphere.obj");
     mObjects.push_back(mBallVis);

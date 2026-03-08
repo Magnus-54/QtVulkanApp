@@ -27,7 +27,16 @@ public:
     float centerX() const { return 0.5f * (mMinX + mMaxX); }
     float centerZ() const { return 0.5f * (mMinZ + mMaxZ); }
 
+    void setFrictionZone(float xMin, float xMax, float zMin, float zMax, float frictionCoeff);
+    void markFrictionZoneColor();
+    bool isInFrictionZone(float x, float z) const;
+    float frictionCoefficient() const { return mFrictionMu; }
+
 private:
+    float mFricXMin = 0.f, mFricXMax = 0.f;
+    float mFricZMin = 0.f, mFricZMax = 0.f;
+    float mFrictionMu = 0.f;
+
     int mNx = 0;
     int mNz = 0;
     float mMinX;

@@ -23,8 +23,8 @@ void VulkanWindow::setCameraSpeed(float value)
     mCameraSpeed += value;
 
     //Keep within some min and max values
-    if(mCameraSpeed < 0.01f)
-        mCameraSpeed = 0.01f;
+    if(mCameraSpeed < 0.1f)
+        mCameraSpeed = 0.1f;
     if (mCameraSpeed > 2.f)
         mCameraSpeed = 2.f;
 }
@@ -177,9 +177,9 @@ void VulkanWindow::wheelEvent(QWheelEvent *event)
     if (mInput.RMB)
     {
         if (numDegrees.y() < 1)
-            setCameraSpeed(-0.002f);
+            setCameraSpeed(-0.02f);
         if (numDegrees.y() > 1)
-            setCameraSpeed(0.002f);
+            setCameraSpeed(0.02f);
     }
     qDebug("CameraSpeed: %f", mCameraSpeed);
 }
