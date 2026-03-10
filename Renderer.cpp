@@ -58,32 +58,37 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
         mBall = Ball(start, realRadius, 1.0f);
     }
 
-    if (terrain)
-    {
-        mObstacleVis = new ObjMesh(assetPath + "cube.obj");
+    // if (terrain)
+    // {
+    //     mObstacleVis = new ObjMesh(assetPath + "cube.obj");
 
-        float ox = terrain->minX() + (terrain->maxX() - terrain->minX()) * 0.55f;
-        float oz = terrain->minZ() + (terrain->maxZ() - terrain->minZ()) * 0.55f;
-        bool hasH = false;
-        float oy = terrain->heightAt(ox, oz, hasH);
+    //     float ox = terrain->minX() + (terrain->maxX() - terrain->minX()) * 0.55f;
+    //     float oz = terrain->minZ() + (terrain->maxZ() - terrain->minZ()) * 0.55f;
+    //     bool hasH = false;
+    //     float oy = terrain->heightAt(ox, oz, hasH);
 
-        QVector3D halfExt(10.0f, 20.0f, 10.0f);
+    //     QVector3D halfExt(10.0f, 20.0f, 10.0f);
 
-        QMatrix4x4 M;
-        float scaleCorrection = 2.0f;
-        M.setToIdentity();
-        M.translate(ox, oy, oz);
-        M.scale(halfExt.x() * scaleCorrection, halfExt.y() * scaleCorrection, halfExt.z() * scaleCorrection);
-        mObstacleVis->setTransform(M);
-        mObstacleVis->setName("obstacle");
-        mObjects.push_back(mObstacleVis);
+    //     QMatrix4x4 M;
+    //     float scaleCorrection = 2.0f;
+    //     M.setToIdentity();
+    //     M.translate(ox, oy, oz);
+    //     M.scale(halfExt.x() * scaleCorrection, halfExt.y() * scaleCorrection, halfExt.z() * scaleCorrection);
+    //     mObstacleVis->setTransform(M);
+    //     mObstacleVis->setName("obstacle");
+    //     mObjects.push_back(mObstacleVis);
 
-        QVector3D center(ox, oy + halfExt.y(), oz);
-        mObstacleMin = center - halfExt;
-        mObstacleMax = center + halfExt;
-        qDebug() << "Obstacle placed at" << center
-                 << "AABB:" << mObstacleMin << "->" << mObstacleMax;
-    }
+    //     QVector3D center(ox, oy + halfExt.y(), oz);
+    //     mObstacleMin = center - halfExt;
+    //     mObstacleMax = center + halfExt;
+    //     qDebug() << "Obstacle placed at" << center
+    //              << "AABB:" << mObstacleMin << "->" << mObstacleMax;
+    // }
+
+    mTraceVis = new TraceObject();
+    mTraceVis->setName("trace");
+    mObjects.push_back(mTraceVis);
+
     //mObjects.push_back((new WorldAxis()));
     //mObjects.push_back(new HeightMap());
     //mObjects.push_back(new ObjMesh(assetPath + "lasdata.obj"));
@@ -132,6 +137,8 @@ void Renderer::initResources()
 	// Create correct buffers for all objects in mObjects with createBuffer() function
     for (auto it=mObjects.begin(); it!=mObjects.end(); it++)
     {
+        if ((*it)->getVertices().empty()) continue;
+
 		createVertexBuffer(uniAlign, *it);                //New version - more explicit to how Vulkan does it
 		//createBuffer(logicalDevice, uniAlign, *it);         //Old version 
 
@@ -355,6 +362,14 @@ void Renderer::initResources()
     if (result != VK_SUCCESS)
         qFatal("Failed to create Debug pipeline: %d", result);
 
+    // Create LINE_LIST pipeline for B-spline rendering
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    rasterization.lineWidth = 2.0f;
+    result = mDeviceFunctions->vkCreateGraphicsPipelines(logicalDevice, mPipelineCache, 1, &pipelineInfo, nullptr, &mLinePipeline);
+    if (result != VK_SUCCESS)
+        qFatal("Failed to create Line pipeline: %d", result);
+    // Reset back to triangle for any future use
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
 	// Destroying the shader modules, we won't need them anymore after the pipeline is created
     if (vertShaderModule)
@@ -428,6 +443,18 @@ void Renderer::startNextFrame()
             M.scale(mBall.radius()*7.5f);
             mBallVis->setTransform(M);
         }
+
+        mTraceTimer += dt;
+        if (mTraceTimer >= 0.15f)
+        {
+            mTraceTimer = 0.f;
+            mBall.sampleTrace();
+            if (mBall.traceSize() >= 3)
+            {
+                mBall.buildTraceVertices(mTraceVis->verts());
+                uploadTraceBuffers();
+            }
+        }
     }
 
     //qDebug() << "Ball pos: " << mBall.position().x() << ", " << mBall.position().y() << ", " << mBall.position().z();
@@ -451,7 +478,15 @@ void Renderer::startNextFrame()
         // 	mDeviceFunctions->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline1);
         // else
         // 	mDeviceFunctions->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mColorMaterial.pipeline);
-        mDeviceFunctions->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mDebugPipeline);
+        //mDeviceFunctions->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mDebugPipeline);
+
+        if ((*it)->getDrawType() == 1)
+            mDeviceFunctions->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mLinePipeline);
+        else
+            mDeviceFunctions->vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mDebugPipeline);
+
+        // Skip objects with no GPU buffers
+        if ((*it)->getVBuffer() == VK_NULL_HANDLE) continue;
 
         QMatrix4x4 mvp = mCamera.projectionMatrix() * mCamera.viewMatrix() * (*it)->getMatrix();
         setModelMatrix((*it)->getMatrix()); //mvp);
@@ -905,6 +940,10 @@ void Renderer::releaseResources()
         mDeviceFunctions->vkDestroyPipeline(dev, mDebugPipeline, nullptr);
         mDebugPipeline = VK_NULL_HANDLE;
     }
+    if (mLinePipeline) {
+        mDeviceFunctions->vkDestroyPipeline(dev, mLinePipeline, nullptr);
+        mLinePipeline = VK_NULL_HANDLE;
+    }
 
     if (mPipelineLayout) {
         mDeviceFunctions->vkDestroyPipelineLayout(dev, mPipelineLayout, nullptr);
@@ -1312,4 +1351,22 @@ void Renderer::destroyTexture(TextureHandle& textureHandle)
 	mDeviceFunctions->vkDestroyImageView(mWindow->device(), textureHandle.mImageView, nullptr);
     mDeviceFunctions->vkDestroyImage(mWindow->device(), textureHandle.mImage, nullptr);
 	mDeviceFunctions->vkFreeMemory(mWindow->device(), textureHandle.mTextureMemory, nullptr);
+}
+
+void Renderer::uploadTraceBuffers()
+{
+    if (!mTraceVis || !mDeviceFunctions) return;
+    mDeviceFunctions->vkDeviceWaitIdle(mWindow->device());
+
+    const VkDeviceSize uniAlign = mWindow->physicalDeviceProperties()->limits.minUniformBufferOffsetAlignment;
+
+    // Destroy old buffer
+    if (mTraceVis->getVBuffer() != VK_NULL_HANDLE) {
+        destroyBuffer({mTraceVis->getVBufferMemory(), mTraceVis->getVBuffer()});
+        mTraceVis->setVBuffer(VK_NULL_HANDLE);
+        mTraceVis->setVBufferMemory(VK_NULL_HANDLE);
+    }
+
+    if (mTraceVis->getVertices().size() > 0)
+        createVertexBuffer(uniAlign, mTraceVis);
 }

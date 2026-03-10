@@ -135,3 +135,71 @@ bool Ball::checkCollisionAABB(const QVector3D& boxMin, const QVector3D& boxMax, 
 
     return true;
 }
+
+void Ball::sampleTrace()
+{
+    mTraceCP.push_back(mPos);
+}
+
+// De Boor's algorithm: quadratic B-spline evaluation
+QVector3D Ball::deBoor(float t, int d, const std::vector<QVector3D>& cp,
+                       const std::vector<float>& knots)
+{
+    int n = (int)cp.size();
+    if (t >= 1.f) return cp.back();
+    if (t <= 0.f) return cp.front();
+
+    // Find knot span
+    int k = d;
+    for (int i = d; i < n; ++i)
+        if (t >= knots[i] && t < knots[i+1]) { k = i; break; }
+
+    // Copy relevant points
+    std::vector<QVector3D> pts(d + 1);
+    for (int j = 0; j <= d; ++j)
+        pts[j] = cp[std::max(0, std::min(k - d + j, n - 1))];
+
+    // Triangular computation
+    for (int r = 1; r <= d; ++r)
+        for (int j = d; j >= r; --j) {
+            int i = k - d + j;
+            float ti  = knots[std::max(0, std::min(i, (int)knots.size()-1))];
+            float tid = knots[std::max(0, std::min(i+d-r+1, (int)knots.size()-1))];
+            float den = tid - ti;
+            float a = (den > 1e-8f) ? (t - ti) / den : 0.f;
+            pts[j] = (1.f - a) * pts[j-1] + a * pts[j];
+        }
+    return pts[d];
+}
+
+void Ball::buildTraceVertices(std::vector<Vertex>& outVerts) const
+{
+    outVerts.clear();
+    int n = (int)mTraceCP.size();
+    int d = 2; // quadratic
+    if (n < d + 1) return;
+
+    // Clamped uniform knot vector
+    std::vector<float> knots(n + d + 1);
+    float span = (float)(n - d);
+    for (int i = 0; i < (int)knots.size(); ++i) {
+        if (i <= d)       knots[i] = 0.f;
+        else if (i >= n)  knots[i] = 1.f;
+        else              knots[i] = (float)(i - d) / span;
+    }
+
+    // Evaluate curve
+    int total = (n - d) * 4 + 1;
+    std::vector<QVector3D> pts;
+    for (int i = 0; i < total; ++i) {
+        float t = (float)i / (float)(total - 1);
+        QVector3D p = deBoor(t, d, mTraceCP, knots);
+        p.setY(p.y() + 0.5f); // lift slightly above surface
+        pts.push_back(p);
+    }
+
+    for (int i = 0; i < (int)pts.size() - 1; ++i) {
+        outVerts.push_back(Vertex{pts[i].x(),   pts[i].y(),   pts[i].z(),   -1,1,-1, 0,0});
+        outVerts.push_back(Vertex{pts[i+1].x(), pts[i+1].y(), pts[i+1].z(), -1,1,-1, 0,0});
+    }
+}

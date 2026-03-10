@@ -244,6 +244,8 @@ void VulkanWindow::handleInput()
     if (mInput.SPACE)
     {
         renderer->mBall.reset(0, 0);
+        renderer->mBall.clearTrace();
+        renderer->mTraceVis->verts().clear();
 
         //reset the visual sphere
         if (renderer->mBallVis)

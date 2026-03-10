@@ -111,6 +111,15 @@ private:
     Ball mBall;
     ObjMesh* mBallVis = nullptr;
 
+    struct TraceObject : public VisualObject
+    {
+        TraceObject() { drawType = 1; }  // render as lines
+        std::vector<Vertex>& verts() { return mVertices; }
+    };
+    TraceObject* mTraceVis = nullptr;
+    float mTraceTimer = 0.f;
+    void uploadTraceBuffers();
+
     ObjMesh* mObstacleVis = nullptr;
     QVector3D mObstacleMin;
     QVector3D mObstacleMax;
@@ -132,6 +141,7 @@ private:
     } mColorMaterial;
     // debug shader
     VkPipeline mDebugPipeline = VK_NULL_HANDLE;
+    VkPipeline mLinePipeline = VK_NULL_HANDLE;
     VkShaderModule mDebugVertShader = VK_NULL_HANDLE;
     VkShaderModule mDebugFragShader = VK_NULL_HANDLE;
 };

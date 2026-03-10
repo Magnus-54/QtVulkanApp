@@ -1,5 +1,7 @@
 #pragma once
 #include <QVector3D>
+#include <vector>
+#include "Vertex.h"
 
 class TriangleSurface; // forward declaration
 
@@ -20,6 +22,11 @@ public:
     float radius() const { return mRadius; }
     float mass() const { return mMass; }
 
+    void sampleTrace();
+    void clearTrace() { mTraceCP.clear(); }
+    void buildTraceVertices(std::vector<Vertex>& outVerts) const;
+    int  traceSize() const { return (int)mTraceCP.size(); }
+
 
 private:
     QVector3D mPos;
@@ -27,4 +34,7 @@ private:
     float mRadius;
     float mMass;
     int mCachedTri = -1;
+
+    std::vector<QVector3D> mTraceCP;
+    static QVector3D deBoor(float t, int d, const std::vector<QVector3D>& cp, const std::vector<float>& knots);
 };
