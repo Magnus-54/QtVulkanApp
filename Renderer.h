@@ -110,6 +110,11 @@ private:
     Camera mCamera;
     Ball mBall;
     ObjMesh* mBallVis = nullptr;
+
+    ObjMesh* mObstacleVis = nullptr;
+    QVector3D mObstacleMin;
+    QVector3D mObstacleMax;
+
     class VulkanWindow* mVulkanWindow{ nullptr };
 
 	VkCommandBuffer beginTransientCommandBuffer();

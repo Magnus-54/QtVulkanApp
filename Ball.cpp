@@ -1,6 +1,7 @@
 #include "Ball.h"
 #include "TriangleSurface.h"
 #include <algorithm>
+#include <cmath>
 
 static const QVector3D GRAVITY = QVector3D(0.0f, -9.81f, 0.0f);
 
@@ -81,4 +82,56 @@ void Ball::update(float dt, const TriangleSurface* terrain)
     }
 
     mPos = newPos;
+}
+
+bool Ball::checkCollisionAABB(const QVector3D& boxMin, const QVector3D& boxMax, float restitution)
+{
+    // 1. Find the closest point on the AABB to the sphere centre
+    float closestX = std::clamp(mPos.x(), boxMin.x(), boxMax.x());
+    float closestY = std::clamp(mPos.y(), boxMin.y(), boxMax.y());
+    float closestZ = std::clamp(mPos.z(), boxMin.z(), boxMax.z());
+    QVector3D closest(closestX, closestY, closestZ);
+
+    // 2. Compute distance from sphere centre to closest point
+    QVector3D diff = mPos - closest;
+    float dist2 = diff.lengthSquared();
+
+    if (dist2 >= mRadius * mRadius)
+        return false;   // no collision
+
+    // 3. Compute collision normal (from box surface towards ball)
+    float dist = std::sqrt(dist2);
+    QVector3D normal;
+    if (dist > 1e-6f) {
+        normal = diff / dist;
+    } else {
+        // Ball centre is inside the box — push out along the axis with
+        // the smallest penetration depth
+        float px1 = mPos.x() - boxMin.x();
+        float px2 = boxMax.x() - mPos.x();
+        float py1 = mPos.y() - boxMin.y();
+        float py2 = boxMax.y() - mPos.y();
+        float pz1 = mPos.z() - boxMin.z();
+        float pz2 = boxMax.z() - mPos.z();
+
+        float minPen = px1;  normal = QVector3D(-1,0,0);
+        if (px2 < minPen) { minPen = px2; normal = QVector3D( 1,0,0); }
+        if (py1 < minPen) { minPen = py1; normal = QVector3D(0,-1,0); }
+        if (py2 < minPen) { minPen = py2; normal = QVector3D(0, 1,0); }
+        if (pz1 < minPen) { minPen = pz1; normal = QVector3D(0,0,-1); }
+        if (pz2 < minPen) { minPen = pz2; normal = QVector3D(0,0, 1); }
+    }
+
+    // 4. Push ball out of penetration
+    float penetration = mRadius - dist;
+    mPos += normal * penetration;
+
+    // 5. Reflect velocity component along the collision normal
+    float vn = QVector3D::dotProduct(mVel, normal);
+    if (vn < 0.0f) {
+        // Remove inward component and apply restitution (energy loss on bounce)
+        mVel -= (1.0f + restitution) * vn * normal;
+    }
+
+    return true;
 }

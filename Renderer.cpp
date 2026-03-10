@@ -34,14 +34,14 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
     terrain->computeNormals();
 
 
-    float rangeX = terrain->maxX() - terrain->minX();
-    float rangeZ = terrain->maxZ() - terrain->minZ();
-    float fzXmin = terrain->minX() + rangeX * 0.45f;
-    float fzXmax = terrain->minX() + rangeX * 0.75f;
-    float fzZmin = terrain->minZ() + rangeZ * 0.35f;
-    float fzZmax = terrain->minZ() + rangeZ * 0.65f;
-    terrain->setFrictionZone(fzXmin, fzXmax, fzZmin, fzZmax, 0.3f);  // mu = 0.3
-    terrain->markFrictionZoneColor();
+    // float rangeX = terrain->maxX() - terrain->minX();
+    // float rangeZ = terrain->maxZ() - terrain->minZ();
+    // float fzXmin = terrain->minX() + rangeX * 0.45f;
+    // float fzXmax = terrain->minX() + rangeX * 0.75f;
+    // float fzZmin = terrain->minZ() + rangeZ * 0.35f;
+    // float fzZmax = terrain->minZ() + rangeZ * 0.65f;
+    // terrain->setFrictionZone(fzXmin, fzXmax, fzZmin, fzZmax, 0.3f);  // mu = 0.3
+    // terrain->markFrictionZoneColor();
 
     mObjects.push_back(terrain);
     mBallVis = new ObjMesh(assetPath + "sphere.obj");
@@ -56,6 +56,33 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
         float startY = has ? (h + realRadius) : realRadius;
         QVector3D start(cx, startY, cz);
         mBall = Ball(start, realRadius, 1.0f);
+    }
+
+    if (terrain)
+    {
+        mObstacleVis = new ObjMesh(assetPath + "cube.obj");
+
+        float ox = terrain->minX() + (terrain->maxX() - terrain->minX()) * 0.55f;
+        float oz = terrain->minZ() + (terrain->maxZ() - terrain->minZ()) * 0.55f;
+        bool hasH = false;
+        float oy = terrain->heightAt(ox, oz, hasH);
+
+        QVector3D halfExt(10.0f, 20.0f, 10.0f);
+
+        QMatrix4x4 M;
+        float scaleCorrection = 2.0f;
+        M.setToIdentity();
+        M.translate(ox, oy, oz);
+        M.scale(halfExt.x() * scaleCorrection, halfExt.y() * scaleCorrection, halfExt.z() * scaleCorrection);
+        mObstacleVis->setTransform(M);
+        mObstacleVis->setName("obstacle");
+        mObjects.push_back(mObstacleVis);
+
+        QVector3D center(ox, oy + halfExt.y(), oz);
+        mObstacleMin = center - halfExt;
+        mObstacleMax = center + halfExt;
+        qDebug() << "Obstacle placed at" << center
+                 << "AABB:" << mObstacleMin << "->" << mObstacleMax;
     }
     //mObjects.push_back((new WorldAxis()));
     //mObjects.push_back(new HeightMap());
@@ -385,6 +412,11 @@ void Renderer::startNextFrame()
     if (terrain)
     {
         mBall.update(dt, terrain);
+
+        if (mObstacleVis)
+        {
+            mBall.checkCollisionAABB(mObstacleMin, mObstacleMax, 0.8f);
+        }
 
         // update ball visual transform if available
         if (mBallVis) {

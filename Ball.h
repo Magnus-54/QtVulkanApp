@@ -12,6 +12,8 @@ public:
     void reset(float x, float z);
     void update(float dt, const TriangleSurface* terrain);
 
+    bool checkCollisionAABB(const QVector3D& boxMin, const QVector3D& boxMax, float restitution = 0.8f);
+
     QVector3D position() const { return mPos; }
     QVector3D velocity() const { return mVel; }
     QVector3D mStartPos;
