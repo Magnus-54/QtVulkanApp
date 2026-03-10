@@ -46,6 +46,8 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
     mObjects.push_back(terrain);
     mBallVis = new ObjMesh(assetPath + "sphere.obj");
     mObjects.push_back(mBallVis);
+
+    QVector3D start;
     if (terrain)
     {
         bool has = false;
@@ -54,7 +56,7 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
         float h = terrain->heightAt(cx, cz, has);
         float realRadius = 2.0f;
         float startY = has ? (h + realRadius) : realRadius;
-        QVector3D start(cx, startY, cz);
+        start = QVector3D(cx, startY, cz);
         mBall = Ball(start, realRadius, 1.0f);
     }
 
@@ -88,6 +90,16 @@ Renderer::Renderer(QVulkanWindow *w, bool msaa)
     mTraceVis = new TraceObject();
     mTraceVis->setName("trace");
     mObjects.push_back(mTraceVis);
+
+    mFluidBalls.reserve(kFluidBallCount);
+    mFluidBallVisuals.reserve(kFluidBallCount);
+    for (int i = 0; i < kFluidBallCount; ++i)
+    {
+        mFluidBalls.emplace_back(start, 2.0f, 1.0f);
+        ObjMesh* vis = new ObjMesh(assetPath + "sphere.obj");
+        mFluidBallVisuals.push_back(vis);
+        mObjects.push_back(vis);
+    }
 
     //mObjects.push_back((new WorldAxis()));
     //mObjects.push_back(new HeightMap());
@@ -426,35 +438,7 @@ void Renderer::startNextFrame()
     TriangleSurface* terrain = dynamic_cast<TriangleSurface*>(mObjects.at(0));
     if (terrain)
     {
-        mBall.update(dt, terrain);
-
-        if (mObstacleVis)
-        {
-            mBall.checkCollisionAABB(mObstacleMin, mObstacleMax, 0.8f);
-        }
-
-        // update ball visual transform if available
-        if (mBallVis) {
-            QVector3D p = mBall.position();
-            QMatrix4x4 M;
-            M.setToIdentity();
-            M.translate(p);
-            // scale mesh so its visual size matches ball radius
-            M.scale(mBall.radius()*7.5f);
-            mBallVis->setTransform(M);
-        }
-
-        mTraceTimer += dt;
-        if (mTraceTimer >= 0.15f)
-        {
-            mTraceTimer = 0.f;
-            mBall.sampleTrace();
-            if (mBall.traceSize() >= 3)
-            {
-                mBall.buildTraceVertices(mTraceVis->verts());
-                uploadTraceBuffers();
-            }
-        }
+        updateFluidSimulation(dt, terrain);
     }
 
     //qDebug() << "Ball pos: " << mBall.position().x() << ", " << mBall.position().y() << ", " << mBall.position().z();
@@ -1369,4 +1353,53 @@ void Renderer::uploadTraceBuffers()
 
     if (mTraceVis->getVertices().size() > 0)
         createVertexBuffer(uniAlign, mTraceVis);
+}
+
+void Renderer::updateFluidSimulation(float dt, TriangleSurface* terrain)
+{
+    // Spawn one new ball every kFluidSpawnInterval seconds until pool is full
+    if (mFluidSpawnedCount < kFluidBallCount) {
+        mFluidSpawnTimer += dt;
+        if (mFluidSpawnTimer >= kFluidSpawnInterval) {
+            mFluidSpawnTimer = 0.f;
+            mFluidBalls[mFluidSpawnedCount] = Ball(mBall.mStartPos, 2.0f, 1.0f);
+            ++mFluidSpawnedCount;
+        }
+    }
+
+    // Update every spawned ball; destroy any that leave the terrain
+    const float meshScale = 2.0f * 7.5f;
+    int i = 0;
+    while (i < mFluidSpawnedCount) {
+        mFluidBalls[i].update(dt, terrain);
+
+        // Check if the ball is still on the terrain
+        bool onTerrain = false;
+        terrain->heightAt(mFluidBalls[i].position().x(),
+                          mFluidBalls[i].position().z(), onTerrain);
+
+        if (!onTerrain) {
+            int last = mFluidSpawnedCount - 1;
+            std::swap(mFluidBalls[i],       mFluidBalls[last]);
+            std::swap(mFluidBallVisuals[i], mFluidBallVisuals[last]);
+
+            QMatrix4x4 hide;
+            hide.setToIdentity();
+            hide.translate(0.f, -9999.f, 0.f);
+            hide.scale(0.f);
+            mFluidBallVisuals[last]->setTransform(hide);
+
+            --mFluidSpawnedCount;
+            continue;
+        }
+
+        // Move sphere mesh to match ball position
+        QVector3D p = mFluidBalls[i].position();
+        QMatrix4x4 M;
+        M.setToIdentity();
+        M.translate(p);
+        M.scale(meshScale);
+        mFluidBallVisuals[i]->setTransform(M);
+        ++i;
+    }
 }

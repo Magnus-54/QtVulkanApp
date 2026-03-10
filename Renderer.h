@@ -120,6 +120,16 @@ private:
     float mTraceTimer = 0.f;
     void uploadTraceBuffers();
 
+    int   kFluidBallCount    = 80;
+    float kFluidSpawnInterval = 0.5f; // seconds between spawns
+
+    std::vector<Ball> mFluidBalls;
+    std::vector<ObjMesh*> mFluidBallVisuals;
+    int mFluidSpawnedCount = 0;
+    float mFluidSpawnTimer   = 0.f;
+
+    void updateFluidSimulation(float dt, TriangleSurface* terrain);
+
     ObjMesh* mObstacleVis = nullptr;
     QVector3D mObstacleMin;
     QVector3D mObstacleMax;
